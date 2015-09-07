@@ -4,6 +4,18 @@ import os, sys
 sys.path.insert(0, os.path.realpath('../utils'))
 from log import *
 N=5
+avail_colors=N*N
+num_colors=[]
+
+for i in xrange(N):
+	num_colors.append(N)
+
+
+def prob(colour):
+	if (colour=='-'):
+		return 0
+	index = ord(colour) - ord('A')
+	return num_colors[index]/avail_colors
 
 
 def getPossibleOrderMoves(x, y):
@@ -37,6 +49,10 @@ def getPossibleOrderMoves(x, y):
 
 def Expectiminimax_decision_chaos(board, Color):
 	alpha=100
+	global avail_colors
+	avail_colors -= 1
+	index = ord(Color) - ord('A')
+	num_colors[index] -= 1
 	(actionx,actiony)=(-1,-1)
 	for x in xrange(N):
 		for y in xrange(N):
@@ -74,6 +90,8 @@ def Omoveshelper(board):
 				
 
 	return ans
+
+
 COLORS = [bcolors.OKRED, bcolors.OKCYAN, bcolors.OKGREEN, bcolors.OKBLUE, bcolors.OKYELLOW, bcolors.OKWHITE]
 TEXTCONV = {'A': 'R', 'B': 'C', 'C': 'G','D':'B', 'E':'Y', '-':'-'}
 def color(tile): # character
@@ -82,6 +100,7 @@ def color(tile): # character
 	if (tile == '-'):
 		index = 5
 	return COLORS[index] + TEXTCONV[tile] + bcolors.ENDC
+
 
 
 def evaluation(board):
@@ -107,9 +126,8 @@ def Expectiminimax_value(board,depth,player,Color):
 		elif(player=="chance"):
 			mycolor=['A','B','C','D','E','-']
 			chance_sum=0
-			Prob=0.2
 			for char in mycolor:
-				chance_sum=chance_sum+Prob*Expectiminimax_value(board,depth+1,"min",char)
+				chance_sum=chance_sum+prob(char)*Expectiminimax_value(board,depth+1,"min",char)
 			return chance_sum
 		
 		elif(player=="min"):
@@ -135,14 +153,13 @@ for i in range(0, N):
 	board.append(boardRow)
 printBoard()
 
+
 (x,y)=Expectiminimax_decision_chaos(board,'A')
 print (x,y)
 board[x][y]='A'
 
-
 (x,y)=Expectiminimax_decision_chaos(board,'B')
 print (x,y)
 board[x][y]='B'
-
 
 printBoard()
