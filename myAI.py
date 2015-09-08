@@ -10,6 +10,14 @@ def printX(*message):
 N = int(raw_input())
 ROLE = raw_input()
 board = []
+avail_colors=N*N
+num_colors=[]
+
+for i in xrange(N):
+	num_colors.append(N)
+
+
+
 for i in range(0, N):
 	boardRow = []
 	for j in range(0, N):
@@ -30,34 +38,12 @@ def isGameOver():
 Inf_min=-100
 Inf_max=100
 
-def getPossibleOrderMoves(x, y):
-	possibleMoves = []
+def prob(colour):
+	if (colour=='-'):
+		return 0
+	index = ord(colour) - ord('A')
+	return num_colors[index]/avail_colors
 
-	for iterator in range(x-1,-1,-1):
-		if board[iterator][y]=='-':
-			possibleMoves.append((iterator,y))
-		else:
-			break
-
-	for iterator in range(y-1,-1,-1):
-		if board[x][iterator]=='-':
-			possibleMoves.append((x,iterator))
-		else:
-			break
-
-	for iterator in range(x+1,N):
-		if board[iterator][y]=='-':
-			possibleMoves.append((iterator,y))
-		else:
-			break
-
-	for iterator in range(y+1,N):
-		if board[x][iterator]=='-':
-			possibleMoves.append((x,iterator))
-		else:
-			break
-
-	return possibleMoves
 
 def getPossibleOrderMoves(x, y):
 	possibleMoves = []
@@ -88,8 +74,42 @@ def getPossibleOrderMoves(x, y):
 
 	return possibleMoves
 
-def Expectiminimax_decision_chaos(Color):
-	alpha=Inf_max
+def getPossibleOrderMoves(x, y):
+	possibleMoves = []
+
+	for iterator in range(x-1,-1,-1):
+		if board[iterator][y]=='-':
+			possibleMoves.append((iterator,y))
+		else:
+			break
+
+	for iterator in range(y-1,-1,-1):
+		if board[x][iterator]=='-':
+			possibleMoves.append((x,iterator))
+		else:
+			break
+
+	for iterator in range(x+1,N):
+		if board[iterator][y]=='-':
+			possibleMoves.append((iterator,y))
+		else:
+			break
+
+	for iterator in range(y+1,N):
+		if board[x][iterator]=='-':
+			possibleMoves.append((x,iterator))
+		else:
+			break
+
+	return possibleMoves
+
+def Expectiminimax_decision_chaos( Color):
+	alpha=100
+	global avail_colors
+	avail_colors -= 1
+	index = ord(Color) - ord('A')
+	num_colors[index] -= 1
+
 	(actionx,actiony)=(-1,-1)
 	for x in xrange(N):
 		for y in xrange(N):
@@ -102,6 +122,7 @@ def Expectiminimax_decision_chaos(Color):
 				board[x][y]="-"
 
 	return (actionx,actiony)
+
 
 def Expectiminimax_decision_order():
 	beta=Inf_min
@@ -145,50 +166,19 @@ def Omoveshelper(board):
 
 	return ans
 
-def scoreHelp(row):
-	MAX = len(row)
-	isOk = lambda x: True if x >= 0 and x < MAX and row[x] != '-' else False
-	score = 0 
-	for ind in range(1, MAX):
-		# epicenter b/w ind-1 and ind
-		length = 0
-		scoreX = 0
-		right = ind
-		left = ind - 1
-		while isOk(right) and isOk(left) and row[left] == row[right]:
-			scoreX += (length+2); length += 2; right += 1; left -= 1
-		score += scoreX
-		
-		# epicenter at ind
-		length = 1 
-		scoreX = 0
-		right = ind + 1
-		left = ind - 1
-		while isOk(right) and isOk(left) and row[left] == row[right]:
-			scoreX += (length + 2); length += 2; right += 1; left -= 1
-		score += scoreX
-	return score
+def evaluation(){
+	
+	
+}
 
-def calculateScore():
-	
-	score = 0
-	for rowList in board:
-		score += scoreHelp(rowList)
-	
-	for col in range(0, N):
-		colList = []
-		for row in range(0, N):
-			colList.append(board[row][col])
-		score += scoreHelp(colList)
-	
-	return score
 
 
 
 def Expectiminimax_value(board,depth,player,Color):
 	cutoff=3
 	if(depth==cutoff):
-		return calculateScore()
+		a=[1,2,3,4,5]
+		return choice(a)
 	else:
 		if(player=="max"):
 			beta=Inf_min
