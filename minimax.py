@@ -3,6 +3,7 @@
 import os, sys
 sys.path.insert(0, os.path.realpath('../utils'))
 from log import *
+
 N=5
 avail_colors=N*N
 num_colors=[]
@@ -17,6 +18,9 @@ def prob(colour):
 	index = ord(colour) - ord('A')
 	return num_colors[index]/avail_colors
 
+
+Inf_min=-100
+Inf_max=100
 
 def getPossibleOrderMoves(x, y):
 	possibleMoves = []
@@ -47,12 +51,14 @@ def getPossibleOrderMoves(x, y):
 
 	return possibleMoves
 
+
 def Expectiminimax_decision_chaos(board, Color):
 	alpha=100
 	global avail_colors
 	avail_colors -= 1
 	index = ord(Color) - ord('A')
 	num_colors[index] -= 1
+
 	(actionx,actiony)=(-1,-1)
 	for x in xrange(N):
 		for y in xrange(N):
@@ -65,6 +71,23 @@ def Expectiminimax_decision_chaos(board, Color):
 				board[x][y]="-"
 
 	return (actionx,actiony)
+
+def Expectiminimax_decision_order():
+	beta=Inf_min
+	max_move=(0,0,0,0)
+	Ordermoves=Omoveshelper(board)
+	for move in Ordermoves:
+		(a,b,c,d)=move
+		board[c][d] = board[a][b]
+		board[a][b] = '-'
+		value=Expectiminimax_value(board,0,"chance",'A')
+		beta=max(beta,value)
+		if(value==beta):
+			max_move=move
+		board[a][b] = board[c][d]
+		board[c][d] = '-'
+		
+	return max_move
 
 
 def Omoveshelper(board):
@@ -100,7 +123,43 @@ def color(tile): # character
 	if (tile == '-'):
 		index = 5
 	return COLORS[index] + TEXTCONV[tile] + bcolors.ENDC
+def scoreHelp(row):
+	MAX = len(row)
+	isOk = lambda x: True if x >= 0 and x < MAX and row[x] != '-' else False
+	score = 0 
+	for ind in range(1, MAX):
+		# epicenter b/w ind-1 and ind
+		length = 0
+		scoreX = 0
+		right = ind
+		left = ind - 1
+		while isOk(right) and isOk(left) and row[left] == row[right]:
+			scoreX += (length+2); length += 2; right += 1; left -= 1
+		score += scoreX
+		
+		# epicenter at ind
+		length = 1 
+		scoreX = 0
+		right = ind + 1
+		left = ind - 1
+		while isOk(right) and isOk(left) and row[left] == row[right]:
+			scoreX += (length + 2); length += 2; right += 1; left -= 1
+		score += scoreX
+	return score
 
+def calculateScore():
+	
+	score = 0
+	for rowList in board:
+		score += scoreHelp(rowList)
+	
+	for col in range(0, N):
+		colList = []
+		for row in range(0, N):
+			colList.append(board[row][col])
+		score += scoreHelp(colList)
+	
+	return score
 
 
 def evaluation(board):
@@ -109,10 +168,10 @@ def evaluation(board):
 def Expectiminimax_value(board,depth,player,Color):
 	cutoff=3
 	if(depth==cutoff):
-		return evaluation(board)
+		return calculateScore()
 	else:
 		if(player=="max"):
-			beta=-100
+			beta=Inf_min
 			Ordermoves=Omoveshelper(board)
 			for move in Ordermoves:
 				(a,b,c,d)=move
@@ -131,7 +190,7 @@ def Expectiminimax_value(board,depth,player,Color):
 			return chance_sum
 		
 		elif(player=="min"):
-			alpha=100
+			alpha=Inf_max
 			for x in xrange(N):
 				for y in xrange(N):
 					if board[x][y]=="-":
@@ -145,21 +204,4 @@ def printBoard():
 		print >>sys.stderr,  "".join( list( map( lambda x: color(x), board[x] ) ) )
 	print >>sys.stderr, '\n'
 
-board = []
-for i in range(0, N):
-	boardRow = []
-	for j in range(0, N):
-		boardRow.append('-')
-	board.append(boardRow)
-printBoard()
 
-
-(x,y)=Expectiminimax_decision_chaos(board,'A')
-print (x,y)
-board[x][y]='A'
-
-(x,y)=Expectiminimax_decision_chaos(board,'B')
-print (x,y)
-board[x][y]='B'
-
-printBoard()
