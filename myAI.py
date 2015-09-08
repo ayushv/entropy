@@ -10,14 +10,6 @@ def printX(*message):
 N = int(raw_input())
 ROLE = raw_input()
 board = []
-avail_colors=N*N
-num_colors=[]
-
-for i in xrange(N):
-	num_colors.append(N)
-
-
-
 for i in range(0, N):
 	boardRow = []
 	for j in range(0, N):
@@ -38,13 +30,6 @@ def isGameOver():
 Inf_min=-100
 Inf_max=100
 
-def prob(colour):
-	if (colour=='-'):
-		return 0
-	index = ord(colour) - ord('A')
-	return num_colors[index]/avail_colors
-
-
 def getPossibleOrderMoves(x, y):
 	possibleMoves = []
 
@@ -74,48 +59,14 @@ def getPossibleOrderMoves(x, y):
 
 	return possibleMoves
 
-def getPossibleOrderMoves(x, y):
-	possibleMoves = []
-
-	for iterator in range(x-1,-1,-1):
-		if board[iterator][y]=='-':
-			possibleMoves.append((iterator,y))
-		else:
-			break
-
-	for iterator in range(y-1,-1,-1):
-		if board[x][iterator]=='-':
-			possibleMoves.append((x,iterator))
-		else:
-			break
-
-	for iterator in range(x+1,N):
-		if board[iterator][y]=='-':
-			possibleMoves.append((iterator,y))
-		else:
-			break
-
-	for iterator in range(y+1,N):
-		if board[x][iterator]=='-':
-			possibleMoves.append((x,iterator))
-		else:
-			break
-
-	return possibleMoves
-
-def Expectiminimax_decision_chaos( Color):
-	alpha=100
-	global avail_colors
-	avail_colors -= 1
-	index = ord(Color) - ord('A')
-	num_colors[index] -= 1
-
+def Expectiminimax_decision_chaos(Color):
+	alpha=Inf_max
 	(actionx,actiony)=(-1,-1)
 	for x in xrange(N):
 		for y in xrange(N):
 			if board[x][y]=="-":
 				board[x][y]=Color
-				value=Expectiminimax_value(board,0,"max",Color)
+				value=Expectiminimax_value(board,0,"max",Color,Inf_min,Inf_max)
 				alpha=min(alpha,value)
 				if(alpha==value):
 					(actionx,actiony)=(x,y)
@@ -123,8 +74,9 @@ def Expectiminimax_decision_chaos( Color):
 
 	return (actionx,actiony)
 
-
 def Expectiminimax_decision_order():
+	al=Inf_min;
+	be=Inf_max;
 	beta=Inf_min
 	max_move=(0,0,0,0)
 	Ordermoves=Omoveshelper(board)
@@ -132,7 +84,7 @@ def Expectiminimax_decision_order():
 		(a,b,c,d)=move
 		board[c][d] = board[a][b]
 		board[a][b] = '-'
-		value=Expectiminimax_value(board,0,"chance",'A')
+		value=Expectiminimax_value(board,0,"chance",'A',al,be)
 		beta=max(beta,value)
 		if(value==beta):
 			max_move=move
@@ -166,53 +118,86 @@ def Omoveshelper(board):
 
 	return ans
 
-def evaluation(){
+def scoreHelp(row):
+	MAX = len(row)
+	isOk = lambda x: True if x >= 0 and x < MAX and row[x] != '-' else False
+	score = 0 
+	for ind in range(1, MAX):
+		# epicenter b/w ind-1 and ind
+		length = 0
+		scoreX = 0
+		right = ind
+		left = ind - 1
+		while isOk(right) and isOk(left) and row[left] == row[right]:
+			scoreX += (length+2); length += 2; right += 1; left -= 1
+		score += scoreX
+		
+		# epicenter at ind
+		length = 1 
+		scoreX = 0
+		right = ind + 1
+		left = ind - 1
+		while isOk(right) and isOk(left) and row[left] == row[right]:
+			scoreX += (length + 2); length += 2; right += 1; left -= 1
+		score += scoreX
+	return score
+
+def calculateScore():
 	
+	score = 0
+	for rowList in board:
+		score += scoreHelp(rowList)
 	
-}
+	for col in range(0, N):
+		colList = []
+		for row in range(0, N):
+			colList.append(board[row][col])
+		score += scoreHelp(colList)
+	
+	return score
 
 
 
-
-def Expectiminimax_value(board,depth,player,Color):
+def Expectiminimax_value(board,depth,player,Color,alp,bet):
 	cutoff=3
 	if(depth==cutoff):
-<<<<<<< HEAD
 		return 1
-=======
-		a=[1,2,3,4,5]
-		return choice(a)
->>>>>>> 090fbe66ff1103ccdb273ee873447981e631dbfa
 	else:
 		if(player=="max"):
-			beta=Inf_min
+			v=Inf_min
 			Ordermoves=Omoveshelper(board)
 			for move in Ordermoves:
 				(a,b,c,d)=move
 				board[c][d] = board[a][b]
 				board[a][b] = '-'
-				beta=max(beta, Expectiminimax_value(board,depth+1,"chance",Color))
+				v=max(v, Expectiminimax_value(board,depth+1,"chance",Color,alp,bet))
+				alp=max(alp,v)
 				board[a][b] = board[c][d]
 				board[c][d] = '-'
-			return beta
+				if (bet<=alp):
+					break
+			return v
 
 		elif(player=="chance"):
 			mycolor=['A','B','C','D','E','-']
 			chance_sum=0
 			Prob=0.2
 			for char in mycolor:
-				chance_sum=chance_sum+Prob*Expectiminimax_value(board,depth+1,"min",char)
+				chance_sum=chance_sum+Prob*Expectiminimax_value(board,depth+1,"min",char,alp,bet)
 			return chance_sum
 		
 		elif(player=="min"):
-			alpha=Inf_max
+			v=Inf_max
 			for x in xrange(N):
 				for y in xrange(N):
 					if board[x][y]=="-":
 						board[x][y]=Color
-						alpha=min(alpha,Expectiminimax_value(board,depth+1,"max",Color))
+						v=min(v,Expectiminimax_value(board,depth+1,"max",Color,alp,bet))
+						bet=min(bet,v)
 						board[x][y]="-"
-			return alpha
+						if (bet<=alp):
+							break
+			return v
 
 #returns x,y for next piece 
 def chaosAI(piece):
