@@ -188,7 +188,7 @@ def calculateScore():
 def Expectiminimax_value(board,depth,player,Color):
 	cutoff=3
 	if(depth==cutoff):
-		return calculateScore()
+		return 1
 	else:
 		if(player=="max"):
 			beta=Inf_min
