@@ -59,6 +59,182 @@ def getPossibleOrderMoves(x, y):
 
 	return possibleMoves
 
+
+def mobility():
+	init_space=0
+	for i in xrange(N):
+		j=0
+		temp_space=0
+		while (j<N):
+			if (board[i][j]=='-'):
+				if (j==N-1):
+					init_space += temp_space+1
+				temp_space += 1
+				j = j+1
+			else:
+				if (j-1==temp_space):
+					init_space += temp_space
+				else:
+					init_space += 2*temp_space
+				temp_space=0
+				j = j+1
+
+	for j in xrange(N):
+		i=0
+		temp_space=0
+		while (i<N):
+			if (board[i][j]=='-'):
+				if (i==N-1):
+					init_space += temp_space+1
+				temp_space += 1
+				i=i+1
+			else:
+				if (i-1==temp_space):
+					init_space += temp_space
+				else:
+					init_space += 2*temp_space
+				temp_space=0
+				i=i+1
+	return init_space
+
+
+def fastLongestPalindromes(seq):
+    """
+    Behaves identically to naiveLongestPalindrome (see below), but
+    runs in linear time.
+    """
+    seqLen = len(seq)
+    l = []
+    i = 0
+    palLen = 0
+    # Loop invariant: seq[(i - palLen):i] is a palindrome.
+    # Loop invariant: len(l) >= 2 * i - palLen. The code path that
+    # increments palLen skips the l-filling inner-loop.
+    # Loop invariant: len(l) < 2 * i + 1. Any code path that
+    # increments i past seqLen - 1 exits the loop early and so skips
+    # the l-filling inner loop.
+    while i < seqLen:
+        # First, see if we can extend the current palindrome.  Note
+        # that the center of the palindrome remains fixed.
+        if i > palLen and seq[i - palLen - 1] == seq[i]:
+            palLen += 2
+            i += 1
+            continue
+
+        # The current palindrome is as large as it gets, so we append
+        # it.
+        l.append(palLen)
+
+        # Now to make further progress, we look for a smaller
+        # palindrome sharing the right edge with the current
+        # palindrome.  If we find one, we can try to expand it and see
+        # where that takes us.  At the same time, we can fill the
+        # values for l that we neglected during the loop above. We
+        # make use of our knowledge of the length of the previous
+        # palindrome (palLen) and the fact that the values of l for
+        # positions on the right half of the palindrome are closely
+        # related to the values of the corresponding positions on the
+        # left half of the palindrome.
+
+        # Traverse backwards starting from the second-to-last index up
+        # to the edge of the last palindrome.
+        s = len(l) - 2
+        e = s - palLen
+        for j in xrange(s, e, -1):
+            # d is the value l[j] must have in order for the
+            # palindrome centered there to share the left edge with
+            # the last palindrome.  (Drawing it out is helpful to
+            # understanding why the - 1 is there.)
+            d = j - e - 1
+
+            # We check to see if the palindrome at l[j] shares a left
+            # edge with the last palindrome.  If so, the corresponding
+            # palindrome on the right half must share the right edge
+            # with the last palindrome, and so we have a new value for
+            # palLen.
+            if l[j] == d: # *
+                palLen = d
+                # We actually want to go to the beginning of the outer
+                # loop, but Python doesn't have loop labels.  Instead,
+                # we use an else block corresponding to the inner
+                # loop, which gets executed only when the for loop
+                # exits normally (i.e., not via break).
+                break
+
+            # Otherwise, we just copy the value over to the right
+            # side.  We have to bound l[i] because palindromes on the
+            # left side could extend past the left edge of the last
+            # palindrome, whereas their counterparts won't extend past
+            # the right edge.
+            l.append(min(d, l[j]))
+        else:
+            # This code is executed in two cases: when the for loop
+            # isn't taken at all (palLen == 0) or the inner loop was
+            # unable to find a palindrome sharing the left edge with
+            # the last palindrome.  In either case, we're free to
+            # consider the palindrome centered at seq[i].
+            palLen = 1
+            i += 1
+
+    # We know from the loop invariant that len(l) < 2 * seqLen + 1, so
+    # we must fill in the remaining values of l.
+
+    # Obviously, the last palindrome we're looking at can't grow any
+    # more.
+    l.append(palLen)
+
+    # Traverse backwards starting from the second-to-last index up
+    # until we get l to size 2 * seqLen + 1. We can deduce from the
+    # loop invariants we have enough elements.
+    lLen = len(l)
+    s = lLen - 2
+    e = s - (2 * seqLen + 1 - lLen)
+    for i in xrange(s, e, -1):
+        # The d here uses the same formula as the d in the inner loop
+        # above.  (Computes distance to left edge of the last
+        # palindrome.)
+        d = i - e - 1
+        # We bound l[i] with min for the same reason as in the inner
+        # loop above.
+        l.append(min(d, l[i]))
+    sum=0
+    for i in xrange(len(l)):
+        if (l[i]!=1):
+            sum=sum+l[i]
+    return sum
+
+def utility():
+	board_score=0
+	for x in xrange(N):
+		temp_s=''
+		y=0
+		while (y<N):
+			if (board[x][y]=='-'):
+				board_score=board_score+fastLongestPalindromes(temp_s)
+				temp_s=''
+				y=y+1
+			else:
+				temp_s=temp_s+board[x][y]
+				if (y==N-1):
+					board_score=board_score+fastLongestPalindromes(temp_s)
+				y=y+1
+
+	for y in xrange(N):
+		temp_s=''
+		x=0
+		while (x<N):
+			if (board[x][y]=='-'):
+				board_score=board_score+fastLongestPalindromes(temp_s)
+				temp_s=''
+				x=x+1
+			else:
+				temp_s=temp_s+board[x][y]
+				if (x==N-1):
+					board_score=board_score+fastLongestPalindromes(temp_s)
+				x=x+1
+	return board_score
+
+
 def Expectiminimax_decision_chaos(Color):
 	alpha=Inf_max
 	(actionx,actiony)=(-1,-1)
@@ -66,7 +242,7 @@ def Expectiminimax_decision_chaos(Color):
 		for y in xrange(N):
 			if board[x][y]=="-":
 				board[x][y]=Color
-				value=Expectiminimax_value(board,0,"max",Color,Inf_min,Inf_max)
+				value=Expectiminimax_value(board,0,"max",Color,Inf_min,Inf_max,0)
 				alpha=min(alpha,value)
 				if(alpha==value):
 					(actionx,actiony)=(x,y)
@@ -84,7 +260,7 @@ def Expectiminimax_decision_order():
 		(a,b,c,d)=move
 		board[c][d] = board[a][b]
 		board[a][b] = '-'
-		value=Expectiminimax_value(board,0,"chance",'A',al,be)
+		value=Expectiminimax_value(board,0,"chance",'A',al,be,1)
 		beta=max(beta,value)
 		if(value==beta):
 			max_move=move
@@ -158,10 +334,14 @@ def calculateScore():
 
 
 
-def Expectiminimax_value(board,depth,player,Color,alp,bet):
+def Expectiminimax_value(board,depth,player,Color,alp,bet,switch):
 	cutoff=3
+	ordercoff=0.3
 	if(depth==cutoff):
-		return 1
+		if(switch==1):
+			return utility()+ordercoff*mobility()
+		else:
+			return utility()
 	else:
 		if(player=="max"):
 			v=Inf_min
@@ -170,7 +350,7 @@ def Expectiminimax_value(board,depth,player,Color,alp,bet):
 				(a,b,c,d)=move
 				board[c][d] = board[a][b]
 				board[a][b] = '-'
-				v=max(v, Expectiminimax_value(board,depth+1,"chance",Color,alp,bet))
+				v=max(v, Expectiminimax_value(board,depth+1,"chance",Color,alp,bet,switch))
 				alp=max(alp,v)
 				board[a][b] = board[c][d]
 				board[c][d] = '-'
@@ -183,7 +363,7 @@ def Expectiminimax_value(board,depth,player,Color,alp,bet):
 			chance_sum=0
 			Prob=0.2
 			for char in mycolor:
-				chance_sum=chance_sum+Prob*Expectiminimax_value(board,depth+1,"min",char,alp,bet)
+				chance_sum=chance_sum+Prob*Expectiminimax_value(board,depth+1,"min",char,alp,bet,switch)
 			return chance_sum
 		
 		elif(player=="min"):
@@ -192,7 +372,7 @@ def Expectiminimax_value(board,depth,player,Color,alp,bet):
 				for y in xrange(N):
 					if board[x][y]=="-":
 						board[x][y]=Color
-						v=min(v,Expectiminimax_value(board,depth+1,"max",Color,alp,bet))
+						v=min(v,Expectiminimax_value(board,depth+1,"max",Color,alp,bet,switch))
 						bet=min(bet,v)
 						board[x][y]="-"
 						if (bet<=alp):
