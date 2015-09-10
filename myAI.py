@@ -26,9 +26,23 @@ def isGameOver():
 
 ## --------------------
 
+avail_colors=N*N+1
+num_colors=[]
 
-Inf_min=-100
-Inf_max=100
+
+for i in xrange(N):
+	num_colors.append(N)
+
+def prob(colour):
+	global avail_colors
+	if (colour=='-'):
+		return 0
+	index = ord(colour) - ord('A')
+	return num_colors[index]/avail_colors
+
+
+Inf_min=-120
+Inf_max=120
 
 def getPossibleOrderMoves(x, y):
 	possibleMoves = []
@@ -57,7 +71,9 @@ def getPossibleOrderMoves(x, y):
 		else:
 			break
 
+	possibleMoves.append((x,y))
 	return possibleMoves
+
 
 
 def mobility():
@@ -67,12 +83,17 @@ def mobility():
 		temp_space=0
 		while (j<N):
 			if (board[i][j]=='-'):
-				if (j==N-1):
-					init_space += temp_space+1
+				if (j==N-1 and temp_space==N-1):
+					temp_space=0
+				
+				elif (j==N-1 and temp_space!=N-1):
+						init_space += temp_space+1
 				temp_space += 1
 				j = j+1
 			else:
-				if (j-1==temp_space):
+				if (j-1==temp_space and j==N-1):
+					init_space += temp_space
+				elif (j==temp_space and j<N):
 					init_space += temp_space
 				else:
 					init_space += 2*temp_space
@@ -84,17 +105,22 @@ def mobility():
 		temp_space=0
 		while (i<N):
 			if (board[i][j]=='-'):
-				if (i==N-1):
-					init_space += temp_space+1
+				if (i==N-1 and temp_space==N-1):
+					temp_space=0
+				
+				elif (i==N-1 and temp_space!=N-1):
+						init_space += temp_space+1
 				temp_space += 1
-				i=i+1
+				i = i+1
 			else:
-				if (i-1==temp_space):
+				if (i-1==temp_space and i==N-1):
+					init_space += temp_space
+				elif (i==temp_space and i<N):
 					init_space += temp_space
 				else:
 					init_space += 2*temp_space
 				temp_space=0
-				i=i+1
+				i = i+1
 	return init_space
 
 
@@ -237,12 +263,16 @@ def utility():
 
 def Expectiminimax_decision_chaos(Color):
 	alpha=Inf_max
+	global avail_colors
+	avail_colors -= 1
+	index = ord(Color) - ord('A')
+	num_colors[index] -= 1
 	(actionx,actiony)=(-1,-1)
 	for x in xrange(N):
 		for y in xrange(N):
-			if board[x][y]=="-":
+			if (board[x][y])=="-":
 				board[x][y]=Color
-				value=Expectiminimax_value(board,0,"max",Color,Inf_min,Inf_max,0)
+				value=Expectiminimax_value(board,0,"max",Color,0)
 				alpha=min(alpha,value)
 				if(alpha==value):
 					(actionx,actiony)=(x,y)
@@ -251,21 +281,21 @@ def Expectiminimax_decision_chaos(Color):
 	return (actionx,actiony)
 
 def Expectiminimax_decision_order():
-	al=Inf_min;
-	be=Inf_max;
 	beta=Inf_min
 	max_move=(0,0,0,0)
 	Ordermoves=Omoveshelper(board)
 	for move in Ordermoves:
 		(a,b,c,d)=move
 		board[c][d] = board[a][b]
-		board[a][b] = '-'
-		value=Expectiminimax_value(board,0,"chance",'A',al,be,1)
+		if (a!=c or b!=d):
+			board[a][b] = '-'
+		value=Expectiminimax_value(board,0,"chance",'A',1)
 		beta=max(beta,value)
 		if(value==beta):
 			max_move=move
 		board[a][b] = board[c][d]
-		board[c][d] = '-'
+		if (a!=c or b!=d):
+			board[c][d] = '-'
 		
 	return max_move
 
@@ -294,90 +324,48 @@ def Omoveshelper(board):
 
 	return ans
 
-def scoreHelp(row):
-	MAX = len(row)
-	isOk = lambda x: True if x >= 0 and x < MAX and row[x] != '-' else False
-	score = 0 
-	for ind in range(1, MAX):
-		# epicenter b/w ind-1 and ind
-		length = 0
-		scoreX = 0
-		right = ind
-		left = ind - 1
-		while isOk(right) and isOk(left) and row[left] == row[right]:
-			scoreX += (length+2); length += 2; right += 1; left -= 1
-		score += scoreX
-		
-		# epicenter at ind
-		length = 1 
-		scoreX = 0
-		right = ind + 1
-		left = ind - 1
-		while isOk(right) and isOk(left) and row[left] == row[right]:
-			scoreX += (length + 2); length += 2; right += 1; left -= 1
-		score += scoreX
-	return score
-
-def calculateScore():
-	
-	score = 0
-	for rowList in board:
-		score += scoreHelp(rowList)
-	
-	for col in range(0, N):
-		colList = []
-		for row in range(0, N):
-			colList.append(board[row][col])
-		score += scoreHelp(colList)
-	
-	return score
 
 
-
-def Expectiminimax_value(board,depth,player,Color,alp,bet,switch):
+def Expectiminimax_value(board,depth,player,Color,switch):
 	cutoff=3
-	ordercoff=0.3
+	ordercoff=0.5
 	if(depth==cutoff):
-		if(switch==1):
-			return utility()+ordercoff*mobility()
+		if(switch==1): #try mobility graph
+			return utility()#-ordercoff*mobility()
 		else:
-			return utility()
+			return utility()#ordercoff*mobility()
 	else:
 		if(player=="max"):
-			v=Inf_min
+			beta=Inf_min
 			Ordermoves=Omoveshelper(board)
 			for move in Ordermoves:
 				(a,b,c,d)=move
 				board[c][d] = board[a][b]
-				board[a][b] = '-'
-				v=max(v, Expectiminimax_value(board,depth+1,"chance",Color,alp,bet,switch))
-				alp=max(alp,v)
+				if (a!=c or b!=d):
+					board[a][b] = '-'
+				beta=max(beta, Expectiminimax_value(board,depth+1,"chance",Color,switch))
 				board[a][b] = board[c][d]
-				board[c][d] = '-'
-				if (bet<=alp):
-					break
-			return v
+				if (a!=c or b!=d):
+					board[c][d] = '-'
+			return beta
 
 		elif(player=="chance"):
-			mycolor=['A','B','C','D','E','-']
+			mycolor=['A','B','C','D','E']
 			chance_sum=0
-			Prob=0.2
+			
 			for char in mycolor:
-				chance_sum=chance_sum+Prob*Expectiminimax_value(board,depth+1,"min",char,alp,bet,switch)
+				chance_sum=chance_sum+prob(char)*Expectiminimax_value(board,depth+1,"min",char,switch)
 			return chance_sum
 		
 		elif(player=="min"):
-			v=Inf_max
+			alpha=Inf_max
 			for x in xrange(N):
 				for y in xrange(N):
 					if board[x][y]=="-":
 						board[x][y]=Color
-						v=min(v,Expectiminimax_value(board,depth+1,"max",Color,alp,bet,switch))
-						bet=min(bet,v)
+						alpha=min(alpha,Expectiminimax_value(board,depth+1,"max",Color,switch))
 						board[x][y]="-"
-						if (bet<=alp):
-							break
-			return v
+			return alpha
 
 #returns x,y for next piece 
 def chaosAI(piece):
@@ -414,7 +402,6 @@ def orderAI():
 import os, sys
 sys.path.insert(0, os.path.realpath('../utils'))
 from log import *
-import minimax
 COLORS = [bcolors.OKRED, bcolors.OKCYAN, bcolors.OKGREEN, bcolors.OKBLUE, bcolors.OKYELLOW, bcolors.OKWHITE]
 TEXTCONV = {'A': 'R', 'B': 'C', 'C': 'G','D':'B', 'E':'Y', '-':'-'}
 def color(tile): # character
@@ -441,7 +428,8 @@ def makeChaosMove(x, y, color):
 def makeOrderMove(a, b, c, d):
 	global board	
 	board[c][d] = board[a][b]
-	board[a][b] = '-'
+	if (a!=c or b!=d):
+		board[a][b] = '-'
 	return True
 
 def playAsOrder():
